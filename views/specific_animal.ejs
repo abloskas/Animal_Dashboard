@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Users Form</title>
+    <title>Specific Animal</title>
 </head>
 <body>
     <% if(messages.errors) { %>
@@ -12,13 +12,11 @@
             <h3><%= x %></h3>
         <% } %>
     <% } %>
-    <h2>Here are all the Animals:</h2>
-        <% for (var x in animals) { %>
-            <h3>Animal: <a href="/mongooses/<%=animals[x].id%>"><%= animals[x].animal %></a></h3>
-            <hr>
-        <% } %>
-        <br>
-        <button><a href="/mongooses/new">Create Animal</a></button>
-        
+    <h1><%= animals.animal%></h1>
+    <a href="/mongooses/<%=animals.id%>/edit">Edit Animal</a>
+    <br>
+    <a href="/mongooses/<%=animals.id%>/destroy">Delete Animal</a>
+    <br>
+    <a href="/">Go Back Home</a>
 </body>
 </html>

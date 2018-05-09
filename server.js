@@ -1,67 +1,130 @@
-// Require the Express Module
 var express = require('express');
-// Create an Express App
 var app = express();
-// Require body-parser (to receive post data from clients)
 var bodyParser = require('body-parser');
-// Integrate body-parser with our App
 app.use(bodyParser.urlencoded({ extended: true }));
-// Require path
 var path = require('path');
-// adding Mongoose
+
+//session
+const flash = require('express-flash');
+app.use(flash());
+var session = require('express-session');
+app.use(session({
+  secret: 'keyboardkittehohhhhhhyyeaaaahhhhh',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 60000 }
+}))
+
+//mongoose
 var mongoose = require('mongoose');
-// This is how we connect to the mongodb database using mongoose -- "basic_mongoose" is the name of
-//   our db in mongodb -- this should match the name of the db you are going to use for your project.
-mongoose.connect('mongodb://localhost/basic_mongoose');
-// Mongoose schema
-var UserSchema = new mongoose.Schema({
-    name: String,
-    age: Number
+mongoose.connect('mongodb://localhost/mongoose_dashboard');
+
+var AnimalSchema = new mongoose.Schema({
+    animal: String
 })
-mongoose.model('User', UserSchema); // We are setting this Schema in our Models as 'User'
-var User = mongoose.model('User') // We are retrieving this Schema from our Models, named 'User'
+mongoose.model('Animal', AnimalSchema); 
+var Animal = mongoose.model('Animal');
 
 // Use native promises
 mongoose.Promise = global.Promise;
 
-// Setting our Static Folder Directory
 app.use(express.static(path.join(__dirname, './static')));
-// Setting our Views Folder Directory
+
 app.set('views', path.join(__dirname, './views'));
-// Setting our View Engine set to EJS
+
 app.set('view engine', 'ejs');
+
+
 // Routes
-// Root Request
+
 app.get('/', function(req, res) {
-    // This is where we will retrieve the users from the database and include them in the view page we will be rendering.
-    User.find({}, function(err, users) {
-        // This is the method that finds all of the users from the database
-        // Notice how the first parameter is the options for what to find and the second is the
-        //   callback function that has an error (if any) and all of the users
-        // Keep in mind that everything you want to do AFTER you get the users from the database must
-        //   happen inside of this callback for it to be synchronous 
-        // Make sure you handle the case when there is an error, as well as the case when there is no error
-        res.render('index', {users: users});
+    Animal.find({}, function(err, animals) {
+        res.render('index', {animals: animals});
       }) 
 })
-// Add User Request 
-app.post('/users', function(req, res) {
+
+app.get('/mongooses/new', function(req, res){
+  res.render('create');
+})
+
+app.get('/mongooses/:id', function(req, res){
+    Animal.findById(req.params.id, function(err, animals){
+      if (err) {
+        console.log("Error: ", err)
+        for(var key in err.errors){
+            req.flash('errors', err.errors[key].message);
+        }
+        res.redirect('/');
+    }
+    else {
+        res.render('specific_animal', {animals: animals})
+    }
+  })
+})
+
+app.get('/mongooses/:id/edit', function(req, res){
+  Animal.findById(req.params.id, function(err, animals){
+    if (err) {
+      console.log("Error: ", err)
+      for(var key in err.errors){
+          req.flash('errors', err.errors[key].message);
+      }
+      res.redirect('/');
+  }
+  else {
+      res.render('edit', {animals: animals})
+  }
+})
+})
+
+app.post('/mongooses', function(req, res) {
     console.log("POST DATA", req.body);
-    // create a new User with the name and age corresponding to those from req.body
-    var user = new User({name: req.body.name, age: req.body.age});
-    // Try to save that new user to the database (this is the method that actually inserts into the db) and run a callback function with an error (if any) from the operation.
-    user.save(function(err) {
-      // if there is an error console.log that something went wrong!
+    var animal = new Animal({animal: req.body.animal});
+    animal.save(function(err) {
       console.log("hello");
       if(err) {
-        console.log('something went wrong');
+        console.log("Error: ", err)
+      for(var key in err.errors){
+          req.flash('errors', err.errors[key].message);
+      }
         res.redirect("/");
-      } else { // else console.log that we did well and then redirect to the root route
-        console.log('successfully added a user!');
+      } else { 
         res.redirect('/');
       }
     })
   })  
+
+  app.post('/mongooses/:id', function(req, res) {
+    var animal = Animal.update({_id: req.params.id}, {animal: req.body.animal}, function(err){
+      if(err) {
+        console.log("Error: ", err)
+      for(var key in err.errors){
+          req.flash('errors', err.errors[key].message);
+      }
+        res.redirect("/");
+      } else { 
+        res.redirect('specific_animal');
+      }
+    })
+    });
+   
+      
+
+  app.get('/mongooses/:id/destroy', function(req, res){
+    Animal.findByIdAndRemove(req.params.id, function(err, animals){
+      if (err) {
+        console.log("Error: ", err)
+        for(var key in err.errors){
+            req.flash('errors', err.errors[key].message);
+        }
+        res.redirect('/');
+    }
+    else {
+      res.redirect('/');
+    }
+  })
+})
+
 // Setting our Server to Listen on Port: 8000
 app.listen(8000, function() {
     console.log("listening on port 8000");
