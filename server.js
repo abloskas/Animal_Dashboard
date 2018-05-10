@@ -15,18 +15,6 @@ app.use(session({
   cookie: { maxAge: 60000 }
 }))
 
-//mongoose
-var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/mongoose_dashboard');
-
-var AnimalSchema = new mongoose.Schema({
-    animal: String
-})
-mongoose.model('Animal', AnimalSchema); 
-var Animal = mongoose.model('Animal');
-
-// Use native promises
-mongoose.Promise = global.Promise;
 
 app.use(express.static(path.join(__dirname, './static')));
 
@@ -35,95 +23,13 @@ app.set('views', path.join(__dirname, './views'));
 app.set('view engine', 'ejs');
 
 
-// Routes
+// Routes moved to routes.js
+require('./server/config/routes.js')(app)
 
-app.get('/', function(req, res) {
-    Animal.find({}, function(err, animals) {
-        res.render('index', {animals: animals});
-      }) 
-})
+//mongoose.js in config
+require("./server/config/mongoose");
 
-app.get('/mongooses/new', function(req, res){
-  res.render('create');
-})
 
-app.get('/mongooses/:id', function(req, res){
-    Animal.findById(req.params.id, function(err, animals){
-      if (err) {
-        console.log("Error: ", err)
-        for(var key in err.errors){
-            req.flash('errors', err.errors[key].message);
-        }
-        res.redirect('/');
-    }
-    else {
-        res.render('specific_animal', {animals: animals})
-    }
-  })
-})
-
-app.get('/mongooses/:id/edit', function(req, res){
-  Animal.findById(req.params.id, function(err, animals){
-    if (err) {
-      console.log("Error: ", err)
-      for(var key in err.errors){
-          req.flash('errors', err.errors[key].message);
-      }
-      res.redirect('/');
-  }
-  else {
-      res.render('edit', {animals: animals})
-  }
-})
-})
-
-app.post('/mongooses', function(req, res) {
-    console.log("POST DATA", req.body);
-    var animal = new Animal({animal: req.body.animal});
-    animal.save(function(err) {
-      console.log("hello");
-      if(err) {
-        console.log("Error: ", err)
-      for(var key in err.errors){
-          req.flash('errors', err.errors[key].message);
-      }
-        res.redirect("/");
-      } else { 
-        res.redirect('/');
-      }
-    })
-  })  
-
-  app.post('/mongooses/:id', function(req, res) {
-    var animal = Animal.update({_id: req.params.id}, {animal: req.body.animal}, function(err){
-      if(err) {
-        console.log("Error: ", err)
-      for(var key in err.errors){
-          req.flash('errors', err.errors[key].message);
-      }
-        res.redirect("/");
-      } else { 
-        res.redirect('specific_animal');
-      }
-    })
-    });
-   
-      
-
-  app.get('/mongooses/:id/destroy', function(req, res){
-    Animal.findByIdAndRemove(req.params.id, function(err, animals){
-      if (err) {
-        console.log("Error: ", err)
-        for(var key in err.errors){
-            req.flash('errors', err.errors[key].message);
-        }
-        res.redirect('/');
-    }
-    else {
-      res.redirect('/');
-    }
-  })
-})
 
 // Setting our Server to Listen on Port: 8000
 app.listen(8000, function() {
